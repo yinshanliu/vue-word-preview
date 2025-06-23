@@ -1,24 +1,66 @@
 # vue-word-preview
 
-## Project setup
+一个基于 Vue.js、Element UI、mammoth.js 和 pdf.js 实现的文档预览应用。
+
+## 功能特性
+
+- **动态文件列表**: 自动加载并展示 `public/docs` 目录下的所有 Word 和 PDF 文档。
+- **Word 文档预览**: 支持 `.docx` 文件预览，能够渲染文本、图片，并自动提取和显示文档目录。
+- **PDF 文档预览**: 支持 `.pdf` 文件预览，能够渲染页面，并自动提取和显示 PDF 内嵌的书签目录。
+- **统一的目录导航**: 无论是 Word 还是 PDF，都可以在左侧通过目录树进行快速导航。
+- **响应式布局**: 界面布局能够适应不同屏幕尺寸。
+
+## 项目设置
+
+### 安装依赖
 ```
 npm install
 ```
 
-### Compiles and hot-reloads for development
+### 启动开发服务器
 ```
 npm run serve
 ```
 
-### Compiles and minifies for production
+### 编译并打包生产版本
 ```
 npm run build
 ```
 
-### Lints and fixes files
-```
-npm run lint
+## 使用说明
+
+### 管理文档
+
+要在此应用中添加、删除或修改文档，请遵循以下步骤：
+
+1.  **文件操作**:
+    -   将您的 `.docx` 或 `.pdf` 文件直接放入 `public/docs` 文件夹中。
+
+2.  **更新清单文件**:
+    -   打开位于 `public/docs/` 目录下的 `manifest.json` 文件。
+    -   这是一个简单的 JSON 数组，其中包含了所有要显示的文档的文件名。
+    -   **添加文件**：在数组中新增一行，写入您的文件名，例如 `"new-document.docx"`。
+    -   **删除文件**：从数组中移除相应的文件名。
+
+**`manifest.json` 示例:**
+```json
+[
+  "a.docx",
+  "b.docx",
+  "c.pdf",
+  "new-document.pdf"
+]
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+完成以上步骤后，重新加载应用主页，文档列表将会自动更新。
+
+## 注意事项与已知限制
+
+1.  **示例文件**: 当前项目为演示目的，硬编码了两个示例文件的路径：
+    - Word: `/public/docs/a.docx`
+    - PDF: `/public/docs/b.pdf`
+    请确保这两个文件存在，或在 `src/views/Manual.vue` 文件中修改为您自己的文件路径。
+
+2.  **Word 文档样式限制**: 于 `mammoth.js` 库的设计理念，它主要关注内容的语义结构而非样式。因此，从 .docx 文件转换时，大部分格式（如 **字体颜色**、字号、段落间距等）不会被保留。
+
+3.  **PDF 渲染**: PDF 的渲染清晰度与性能取决于 `pdf.js` 的配置和浏览器性能。对于特别大的 PDF 文件，初次加载可能会比较慢。

@@ -1,24 +1,27 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+import Home from '../views/Home.vue'
+import Manual from '../views/Manual.vue'
+
+Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    redirect: '/home'
-  },
-  {
-    path: '/home',
     name: 'Home',
-    component: () => import('../views/Home.vue')
+    component: Home
   },
   {
-    path: '/manual',
+    path: '/view/:fileName',
     name: 'Manual',
-    component: () => import('../views/Manual.vue')
+    component: Manual,
+    props: true
   }
 ]
 
-const router = createRouter({
-  history: createWebHashHistory(),
+const router = new VueRouter({
+  mode: 'history',
+  base: process.env.BASE_URL,
   routes
 })
 

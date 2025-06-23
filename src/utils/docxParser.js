@@ -16,9 +16,26 @@ export async function parseDocx(docxPath) {
     })
     const arrayBuffer = response.data
 
-    // 解析文档内容
-    const result = await mammoth.convertToHtml({ arrayBuffer })
-    const content = result.value
+    // 定义样式映射，将Word中的标题映射到HTML标签
+    // 同时兼容中英文Word的标题样式
+    const styleMap = [
+      "p[style-name='Heading 1'] => h1:fresh",
+      "p[style-name='标题 1'] => h1:fresh",
+      "p[style-name='Heading 2'] => h2:fresh",
+      "p[style-name='标题 2'] => h2:fresh",
+      "p[style-name='Heading 3'] => h3:fresh",
+      "p[style-name='标题 3'] => h3:fresh",
+      "p[style-name='Heading 4'] => h4:fresh",
+      "p[style-name='标题 4'] => h4:fresh",
+      "p[style-name='Heading 5'] => h5:fresh",
+      "p[style-name='标题 5'] => h5:fresh",
+      "p[style-name='Heading 6'] => h6:fresh",
+      "p[style-name='标题 6'] => h6:fresh",
+    ];
+
+    // 解析文档内容，并应用样式映射
+    const result = await mammoth.convertToHtml({ arrayBuffer }, { styleMap });
+    let content = result.value
     
     // 创建一个临时容器来存放内容，以便提取结构
     const tempDiv = document.createElement('div')
@@ -27,8 +44,9 @@ export async function parseDocx(docxPath) {
     // 提取文档结构
     const structure = extractStructure(tempDiv)
     
+    // 返回处理后的HTML，其中包含了为每个标题添加的ID
     return {
-      content,
+      content: tempDiv.innerHTML,
       structure
     }
   } catch (error) {
@@ -38,27 +56,23 @@ export async function parseDocx(docxPath) {
 }
 
 /**
- * 从DOM元素中提取文档结构
+ * 从DOM元素中提取文档结构 (重写以提高健壮性)
  * @param {HTMLElement} container - 包含文档内容的DOM元素
  * @returns {Array} 文档结构数组
  */
 function extractStructure(container) {
-  // 查找所有标题元素
   const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6')
-  
-  // 构建结构树
-  const structure = []
-  let currentLevel = 0
-  let currentPath = [structure]
-  
+  if (headings.length === 0) return []
+
+  const root = { level: 0, children: [] }
+  const path = [root]
+
   headings.forEach((heading, index) => {
-    const level = parseInt(heading.tagName.substring(1))
+    const level = parseInt(heading.tagName.substring(1), 10)
     const title = heading.textContent.trim()
     const id = `heading-${index}`
-    
-    // 给标题元素添加ID，便于导航
     heading.id = id
-    
+
     const node = {
       id,
       title,
@@ -66,32 +80,15 @@ function extractStructure(container) {
       children: []
     }
     
-    // 根据标题级别调整当前路径
-    if (level > currentLevel) {
-      // 进入下一级
-      if (currentPath[currentPath.length - 1].length > 0) {
-        currentPath.push(currentPath[currentPath.length - 1][currentPath[currentPath.length - 1].length - 1].children)
-      } else {
-        // 如果没有父节点，直接添加到当前路径
-        currentPath[currentPath.length - 1].push(node)
-        return
-      }
-    } else if (level < currentLevel) {
-      // 返回上级，可能需要返回多级
-      const steps = currentLevel - level
-      for (let i = 0; i < steps; i++) {
-        if (currentPath.length > 1) {
-          currentPath.pop()
-        }
-      }
+    while (path[path.length - 1].level >= level) {
+      path.pop()
     }
-    
-    // 添加到当前路径
-    currentPath[currentPath.length - 1].push(node)
-    currentLevel = level
+
+    path[path.length - 1].children.push(node)
+    path.push(node)
   })
-  
-  return structure
+
+  return root.children
 }
 
 /**

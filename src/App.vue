@@ -1,89 +1,80 @@
 <template>
   <div id="app">
-    <el-container class="main-container">
-      <el-header height="60px" class="header">
-        <div class="logo">文档预览系统</div>
-        <el-menu
-          :default-active="activeIndex"
-          class="main-menu"
-          mode="horizontal"
-          router
-          @select="handleSelect"
-        >
-          <el-menu-item index="/home">首页</el-menu-item>
-          <el-menu-item index="/manual">用户手册</el-menu-item>
-        </el-menu>
-      </el-header>
-      
-      <el-main class="main-content">
-        <router-view />
-      </el-main>
-    </el-container>
+    <el-header class="app-header">
+      <router-link to="/" class="title-link">
+        <h1>文档预览系统</h1>
+      </router-link>
+    </el-header>
+    <el-main class="app-main">
+      <router-view/>
+    </el-main>
   </div>
 </template>
 
-<script setup>
-import { ref, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-
-const activeIndex = ref('/home')
-const route = useRoute()
-
-watch(() => route.path, (newPath) => {
-  activeIndex.value = newPath
-})
-
-onMounted(() => {
-  activeIndex.value = route.path
-})
-
-const handleSelect = (key) => {
-  activeIndex.value = key
+<script>
+export default {
+  name: 'App',
+  data() {
+    return {
+      activeIndex: '/home'
+    }
+  },
+  watch: {
+    '$route.path'(newPath) {
+      this.activeIndex = newPath
+    }
+  },
+  created() {
+    this.activeIndex = this.$route.path
+  },
+  methods: {
+    handleSelect(key) {
+      this.activeIndex = key
+    }
+  }
 }
 </script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body {
+/* Global styles */
+html, body, #app {
   height: 100%;
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  margin: 0;
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
 }
 
 #app {
-  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.main-container {
-  height: 100%;
-}
-
-.header {
+.app-header {
+  flex-shrink: 0; /* 防止头部被压缩 */
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #eee;
+  justify-content: flex-start; /* 标题居左 */
+  border-bottom: 1px solid #e6e6e6;
+  padding: 0 20px;
   background-color: #fff;
+  height: 60px !important; /* 确保高度一致 */
 }
 
-.logo {
-  font-size: 20px;
-  font-weight: bold;
-  margin-right: 40px;
-  color: #409EFF;
+.title-link {
+  text-decoration: none;
+  color: #409EFF; /* 使用主题蓝色 */
 }
 
-.main-menu {
-  border-bottom: none;
+.title-link h1 {
+    margin: 0;
+    font-size: 20px;
 }
 
-.main-content {
+.app-main {
+  flex-grow: 1; /* 主内容区占据剩余空间 */
+  overflow-y: auto; /* 内容超出时可滚动 */
   padding: 0;
-  height: calc(100% - 60px);
-  overflow: hidden;
+  background-color: #f5f7fa;
 }
 </style>
