@@ -8,6 +8,7 @@
 - **Word 文档预览**: 支持 `.docx` 文件预览，能够渲染文本、图片，并自动提取和显示文档目录。
 - **PDF 文档预览**: 支持 `.pdf` 文件预览，能够渲染页面，并自动提取和显示 PDF 内嵌的书签目录。
 - **统一的目录导航**: 无论是 Word 还是 PDF，都可以在左侧通过目录树进行快速导航。
+- **内网/离线支持**: 核心功能不依赖外部CDN，可完全在内网或离线环境下部署和使用。
 - **响应式布局**: 界面布局能够适应不同屏幕尺寸。
 
 ## 项目设置
@@ -54,13 +55,50 @@ npm run build
 
 完成以上步骤后，重新加载应用主页，文档列表将会自动更新。
 
-## 注意事项与已知限制
+## 部署指南
 
-1.  **示例文件**: 当前项目为演示目的，硬编码了两个示例文件的路径：
-    - Word: `/public/docs/a.docx`
-    - PDF: `/public/docs/b.pdf`
-    请确保这两个文件存在，或在 `src/views/Manual.vue` 文件中修改为您自己的文件路径。
+### 1. 配置 `publicPath`
 
-2.  **Word 文档样式限制**: 于 `mammoth.js` 库的设计理念，它主要关注内容的语义结构而非样式。因此，从 .docx 文件转换时，大部分格式（如 **字体颜色**、字号、段落间距等）不会被保留。
+如果您需要将此应用部署到服务器的子目录（例如 `http://example.com/vue-word-preview/`），您必须先修改 `vue.config.js` 文件中的 `publicPath` 选项。
 
-3.  **PDF 渲染**: PDF 的渲染清晰度与性能取决于 `pdf.js` 的配置和浏览器性能。对于特别大的 PDF 文件，初次加载可能会比较慢。
+```javascript
+// vue.config.js
+module.exports = {
+  // 将这里的路径修改为您将要部署的子目录
+  publicPath: '/vue-word-preview/', 
+  // ... 其他配置
+}
+```
+如果您是部署到域名的根目录，请将其设置为 `'/'`。
+
+### 2. 构建项目
+修改完配置后，运行构建命令：
+```
+npm run build
+```
+这会生成一个 `dist` 文件夹，其中的所有资源路径都已根据您的 `publicPath` 设置好了。
+
+### 3. Nginx 配置示例
+
+将 `dist` 文件夹中的所有内容上传到您的服务器，并使用以下 Nginx 配置。此配置适用于部署在子目录的情况，并能正确处理前端路由。
+
+```nginx
+server {
+    listen 9001;
+    server_name your_server_ip_or_domain;
+
+    location /vue-word-preview/ {
+        # 'alias' 指向您服务器上 dist 文件夹的绝对路径
+        alias /path/to/your/dist/;
+        
+        # 这一行是确保前端路由正常工作的关键
+        try_files $uri $uri/ /vue-word-preview/index.html;
+    }
+}
+```
+修改配置后，请重启 Nginx 服务。
+
+## 注意事项
+
+- **Word 文档样式限制**: 由于 `mammoth.js` 库的设计理念，它主要关注内容的语义结构而非样式。因此，从 .docx 文件转换时，大部分格式（如 **字体颜色**、字号、段落间距等）不会被保留。
+- **PDF 渲染**: PDF 的渲染清晰度与性能取决于 `pdf.js` 的配置和浏览器性能。对于特别大的 PDF 文件，初次加载可能会比较慢。

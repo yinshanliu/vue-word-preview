@@ -55,8 +55,8 @@
 import { parseDocx, convertToTreeData } from '../utils/docxParser';
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 
-// 动态设置 workerSrc，确保版本一致
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.js`;
+// 将 workerSrc 指向本地路径
+pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.BASE_URL}pdfjs/pdf.worker.js`;
 
 export default {
   name: 'Manual',
@@ -136,7 +136,8 @@ export default {
       }
     },
     async loadDocx() {
-      const docPath = `/docs/${this.fileName}`;
+      // --- 这里是修改点 ---
+      const docPath = `${process.env.BASE_URL}docs/${this.fileName}`;
       const result = await parseDocx(docPath);
       
       this.documentContent = result.content;
@@ -147,7 +148,8 @@ export default {
       }
     },
     async renderPdf() {
-      const pdfPath = `/docs/${this.fileName}`;
+      // --- 这里是修改点 ---
+      const pdfPath = `${process.env.BASE_URL}docs/${this.fileName}`;
       const pdf = await pdfjsLib.getDocument(pdfPath).promise;
       this.pdfDoc = pdf; // 存储PDF文档对象以供导航使用
 
@@ -320,4 +322,4 @@ export default {
   margin-top: 1em;
   margin-bottom: 0.5em;
 }
-</style> 
+</style>

@@ -41,7 +41,8 @@ export default {
   },
   async mounted() {
     try {
-      const response = await axios.get('/docs/manifest.json');
+      // --- 这里是修改点 ---
+      const response = await axios.get(`${process.env.BASE_URL}docs/manifest.json`);
       this.files = response.data
         .filter(name => name.endsWith('.docx') || name.endsWith('.pdf'))
         .map(name => {
@@ -84,4 +85,4 @@ export default {
 .error-message {
   margin-top: 20px;
 }
-</style> 
+</style>
