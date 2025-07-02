@@ -53,10 +53,7 @@
 
 <script>
 import { parseDocx, convertToTreeData } from '../utils/docxParser';
-import * as pdfjsLib from 'pdfjs-dist/build/pdf';
-
-// 将 workerSrc 指向本地路径
-pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.BASE_URL}pdfjs/pdf.worker.js`;
+import * as pdfjsLib from 'pdfjs-dist';
 
 export default {
   name: 'Manual',
@@ -148,6 +145,7 @@ export default {
       }
     },
     async renderPdf() {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.BASE_URL}pdfjs/pdf.worker.js`;
       // --- 这里是修改点 ---
       const pdfPath = `${process.env.BASE_URL}docs/${this.fileName}`;
       const pdf = await pdfjsLib.getDocument(pdfPath).promise;
