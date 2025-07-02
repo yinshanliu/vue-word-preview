@@ -53,7 +53,7 @@
 
 <script>
 import { parseDocx, convertToTreeData } from '../utils/docxParser';
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/es5/build/pdf.js';
 
 export default {
   name: 'Manual',

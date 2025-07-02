@@ -8,7 +8,7 @@ module.exports = {
       new CopyWebpackPlugin({
         patterns: [
           {
-            from: 'node_modules/pdfjs-dist/build/pdf.worker.js',
+            from: 'node_modules/pdfjs-dist/es5/build/pdf.worker.js',
             to: 'pdfjs/pdf.worker.js'
           }
         ]
