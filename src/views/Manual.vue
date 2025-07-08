@@ -165,7 +165,7 @@ export default {
 
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 });
+        const viewport = page.getViewport({ scale: 2.3 });
         
         const canvas = document.createElement('canvas');
         canvas.id = `pdf-page-${i}`; // 为每个页面添加ID以便导航
@@ -183,40 +183,67 @@ export default {
       }
     },
     async handleNodeClick(data) {
-      // DOCX 导航
-      if (this.fileType === 'docx') {
-        const element = document.getElementById(data.id);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      // PDF 导航 (重写以支持命名锚点)
-      } else if (this.fileType === 'pdf' && data.dest && this.pdfDoc) {
-        try {
-          let dest = data.dest;
-          // 如果目标是字符串，它是命名目标，需要先解析
-          if (typeof dest === 'string') {
-            dest = await this.pdfDoc.getDestination(dest);
-          }
-          // 显式目标是一个数组，第一个元素是页面引用
-          if (!Array.isArray(dest)) {
-            console.error("PDF 目标不是一个有效的数组:", dest);
-            return;
-          }
-          const pageRef = dest[0];
+      if (!this.pdfDoc || !data.dest) return;
 
-          // 从页面引用获取页面索引
-          const pageIndex = await this.pdfDoc.getPageIndex(pageRef);
-          const pageNum = pageIndex + 1;
-          const pageElement = document.getElementById(`pdf-page-${pageNum}`);
-
-          if (pageElement) {
-            pageElement.scrollIntoView({ behavior: 'smooth' });
-          } else {
-             console.error(`无法找到PDF页面元素: ${pageNum}`);
-          }
-        } catch (e) {
-            console.error("无法导航到PDF目标位置", e);
+      try {
+        let dest = data.dest;
+        if (typeof dest === 'string') {
+          dest = await this.pdfDoc.getDestination(dest);
         }
+        if (!Array.isArray(dest)) return;
+
+        const pageRef = dest[0];
+        const pageIndex = await this.pdfDoc.getPageIndex(pageRef);
+        if (pageIndex === -1) return;
+
+        const pageNum = pageIndex + 1;
+        const page = await this.pdfDoc.getPage(pageNum);
+        const pageElement = document.getElementById(`pdf-page-${pageNum}`);
+        if (!pageElement) return;
+
+        const destType = dest[1].name;
+        let top = null;
+
+        if (destType === 'XYZ') {
+          top = dest[3];
+        } else if (destType === 'FitH' || destType === 'FitBH') {
+          top = dest[2];
+        }
+
+        const scroller = this.$el.querySelector('.content-area');
+        if (!scroller) return;
+
+        // --- 核心逻辑：使用 getBoundingClientRect 进行绝对定位 ---
+
+        if (typeof top !== 'number') {
+          // 对于没有 top 坐标的目标，简单滚动到页面顶部
+          const scrollerRect = scroller.getBoundingClientRect();
+          const pageRect = pageElement.getBoundingClientRect();
+          scroller.scrollTop += pageRect.top - scrollerRect.top - 20; // -20 作为缓冲
+          return;
+        }
+
+        // 对于有 top 坐标的目标，执行精确计算
+        const pdfPageHeight = page.view[3] - page.view[1];
+        const canvasHeight = pageElement.clientHeight;
+        const scale = canvasHeight / pdfPageHeight;
+        
+        // 目标位置在 Canvas 内部的像素偏移（从 Canvas 顶部算起）
+        const offsetInCanvas = (pdfPageHeight - top) * scale;
+        
+        // 获取滚动容器和目标 Canvas 相对于视口的绝对位置
+        const scrollerRect = scroller.getBoundingClientRect();
+        const pageRect = pageElement.getBoundingClientRect();
+        
+        // 计算最终的 scrollTop 值
+        // scrollTop 的增量 = (Canvas顶部 相对于 视口的位置) - (滚动容器顶部 相对于 视口的位置) + (在Canvas内部的偏移)
+        const scrollTopDelta = pageRect.top - scrollerRect.top + offsetInCanvas;
+
+        // -20px 作为视觉缓冲，让标题不会紧贴顶部
+        scroller.scrollTop += scrollTopDelta - 20;
+
+      } catch (error) {
+        console.error("处理PDF导航时出错:", error);
       }
     },
     /**
@@ -273,9 +300,24 @@ export default {
 .content-area {
   padding: 20px;
   overflow-y: auto;
-  background-color: #f0f2f5;
+  /* 让内容区域居中显示，适合阅读 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #f5f5f5; /* 添加背景色以区分内容和白边 */
 }
 
+/* 关键样式修改 */
+.pdf-container >>> canvas {
+  /* 让 canvas 宽度撑满容器，同时保持其原始宽高比 */
+  max-width: 100%;
+  height: auto;
+  /* 添加阴影和边框，使其看起来像真实的纸张 */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border: 1px solid #dcdcdc;
+  /* 增加页间距 */
+  margin-bottom: 20px; 
+}
 .loading-tree,
 .loading-content {
   display: flex;
